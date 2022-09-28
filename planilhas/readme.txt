@@ -1,1 +1,0 @@
-pasta onde o programa salavrá as planilhas criadas

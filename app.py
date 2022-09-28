@@ -14,7 +14,7 @@ def main():
         arq = txt(arq)
         try:
             criaPlan(arq,mes)
-            fim = input('\nPlanilha criada com sucesso.\n\nPressione "Enter" para criar outra planilha ou digite "sair"')
+            fim = input('\nPlanilha criada com sucesso.\n\nPressione "Enter" para criar outra planilha ou digite "sair":')
             if fim.lower() =='sair': break 
         except:
             print("ops!!! Houve um erro ao Processar dados\n")
@@ -24,6 +24,66 @@ def txt(arq):
     #Adiciona a exenção caso o usuário não tenha digitado.
     if arq.endswith('.txt'): return arq
     else: return arq+'.txt'
+
+def usaDoc(documento):
+    #Abre o documento e acha as linhas que estão com os dados necessarios.
+    #Retorna uma lista de dicionarios com os dados.
+    with open(documento, 'r', encoding="UTF-8") as arq:
+        tudo = arq.read()
+        blocos = tudo.split('Psicologia')[1:]
+        retorno = []
+        
+        for bloco in blocos:
+            linhas = bloco.strip().split("\n")
+            convenio = linhas[1].strip()[1:].split('.')[0].strip()
+            for linha in linhas: 
+                if 'Nome' in linha:
+                    nome = pegaNome(linha)
+                    if 'Quantidade' in linha:
+                        qtd = pegaQtd(linha)
+                elif 'Quantidade' in linha:
+                    qtd = pegaQtd(linha) 
+            [rep, i]  = repetido(retorno, nome)
+            if rep:
+                retorno[i]['quantidade']+=qtd
+                retorno[i]['total'] = precoConvenio(retorno[i]['convenio'],retorno[i]['quantidade'])
+            else:                   
+                total = precoConvenio(convenio,qtd)
+                pessoa = {'nome': nome, 'convenio':convenio, 'quantidade':qtd, 'total':total}
+                retorno.append(pessoa)
+        return retorno
+
+def precoConvenio(convenio, qtd):
+    #Retorna o valor total referente ao convenio da pessoa e a qtd de seções.
+    qtd = float(qtd)
+    convenio = convenio.lower()
+    if 'sul' in convenio: return qtd*27.56
+    elif 'amil' in convenio: return qtd*24.39
+    elif 'notre' in convenio: return qtd*15.00
+    elif 'porto' in convenio: return qtd*16.34
+    elif 'sompo' in convenio: return  qtd*9.67
+    elif 'particular' in convenio: return qtd*35.00
+    elif 'unimed' in convenio: return qtd*12.00
+    else: return 0
+
+def pegaQtd(frase):
+    #Garimpa a penas o numero referente à quantidade na linha.
+    qtd= frase[frase.find('Quantidade'):].split(':')[1].split('.')[0].split()[0]
+    return int(qtd)
+
+def pegaNome(frase):
+    #Retorna apenas o nome,da pessoa, que está dentro da linha.
+    nome = frase[frase.find('Nome'):].split(':')[1].split('.')[0].strip()
+    return nome
+
+def repetido(lista,nome):
+    # Verifica se o nome já está na lista. Caso esteja, irá retornar uma lista com verdadeiro no
+    # primeiro indice e no segundo indice retornará o índice na lista onde o nome que já existe está.
+    if lista != []:
+        for i in lista:
+            if i['nome'] == nome:
+                return [True,lista.index(i)]  
+    return [False, -1]
 
 def criaPlan(arq, mes):
     #Cria a planilha e suas primeiras linhas de titulos.
@@ -81,75 +141,12 @@ def addPessoas(pessoas, plan, linhaInicial):
     for i in linhaFinal:
         plan[i] = ' '
     estiliza(plan,linhaFinal,1)
-    totalSomado = f'=SOMA(D{linhaInicial}:D{linha-1})'
+    totalSomado = f'=SUM(D{linhaInicial}:D{linha-1})'
     estiliza(plan,[f'D{linha+1}'],2)
     plan[f'D{linha+1}']=totalSomado
 
-def temRepetidos(lista,nome):
-    # Verifica se o nome já está na lista. Caso esteja, irá retornar uma lista com verdadeiro no
-    # primeiro indice e no segundo indice retornará o índice na lista onde o nome que já existe está.
-    for i in lista:
-        if i['nome'] == nome:
-            return [True,[i]]
-    return [False]
-
-
-def usaDoc(documento):
-    #Abre o documento e acha as linhas que estão com os dados necessarios.
-    #Retorna uma lista de dicionarios com os dados.
-    with open(documento, 'r', encoding="UTF-8") as arq:
-        tudo = arq.read()
-        blocos = tudo.split('Psicologia')[1:]
-        retorno = []
-        
-        for bloco in blocos:
-            linhas = bloco.strip().split("\n")
-            convenio = linhas[1].strip()[1:].split('.')[0].strip()
-            for linha in linhas: 
-                if 'Nome' in linha:
-                    nome = pegaNome(linha)
-                    if 'Quantidade' in linha:
-                        qtd = pegaQtd(linha)
-                elif 'Quantidade' in linha:
-                    qtd = pegaQtd(linha)  
-            if retorno != []: 
-                ultimoAdd = retorno[-1]
-                if ultimoAdd['nome']==nome:
-                    ultimoAdd['quantidade']+=qtd
-                    total = precoConvenio(ultimoAdd['convenio'],ultimoAdd['quantidade'])
-                else:
-                    total = precoConvenio(convenio,qtd)
-                    pessoa = {'nome': nome, 'convenio':convenio, 'quantidade':qtd, 'total':total}
-                    retorno.append(pessoa)
-            else:                   
-                total = precoConvenio(convenio,qtd)
-                pessoa = {'nome': nome, 'convenio':convenio, 'quantidade':qtd, 'total':total}
-                retorno.append(pessoa)
-        return retorno
-
-def precoConvenio(convenio, qtd):
-    #Retorna o valor total referente ao convenio da pessoa e a qtd de seções.
-    qtd = float(qtd)
-    convenio = convenio.lower()
-    if 'sul' in convenio: return qtd*27.56
-    elif 'amil' in convenio: return qtd*24.39
-    elif 'notre' in convenio: return qtd*15.00
-    elif 'porto' in convenio: return qtd*16.34
-    elif 'sompo' in convenio: return  qtd*9.67
-    elif 'particular' in convenio: return qtd*35.00
-    elif 'unimed' in convenio: return qtd*12.00
-    else: return 0
-
-def pegaQtd(frase):
-    #Garimpa a penas o numero referente à quantidade na linha.
-    qtd= frase[frase.find('Quantidade'):].split(':')[1].split('.')[0].split()[0]
-    return int(qtd)
-
-def pegaNome(frase):
-    #Retorna apenas o nome,da pessoa, que está dentro da linha.
-    nome = frase[frase.find('Nome'):].split(':')[1].split('.')[0].strip()
-    return nome
-    
 if __name__ == '__main__':
     # Caso este arquivo seja executado diretamente, a função main será iniciada
     main()
+
+#usaDoc('documentos/docExemplo.txt')
